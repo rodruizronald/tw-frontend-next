@@ -20,6 +20,11 @@ const roboto = Roboto({
  * SEO and social sharing configuration
  */
 export const metadata: Metadata = {
+  // Base URL for resolving relative URLs in metadata
+  metadataBase: new URL(
+    process.env['NEXT_PUBLIC_SITE_URL'] ?? 'https://ticosintech.com'
+  ),
+
   title: {
     default: 'Ticos in Tech - Costa Rica Tech Jobs',
     template: '%s | Ticos in Tech',
@@ -33,9 +38,60 @@ export const metadata: Metadata = {
     'software developer',
     'programming jobs',
     'IT jobs',
+    'empleos tecnologia',
+    'trabajo remoto',
   ],
+  authors: [{ name: 'Ticos in Tech' }],
+  creator: 'Ticos in Tech',
+  publisher: 'Ticos in Tech',
+
+  // Favicon and icons
   icons: {
     icon: '/favicon.svg',
+    apple: '/apple-touch-icon.png',
+  },
+
+  // Open Graph (Facebook, LinkedIn, etc.)
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    alternateLocale: 'es_CR',
+    url: '/',
+    siteName: 'Ticos in Tech',
+    title: 'Ticos in Tech - Costa Rica Tech Jobs',
+    description:
+      'Find the best tech jobs in Costa Rica. Browse remote and on-site positions from top tech companies.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Ticos in Tech - Find Tech Jobs in Costa Rica',
+      },
+    ],
+  },
+
+  // Twitter Card
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ticos in Tech - Costa Rica Tech Jobs',
+    description:
+      'Find the best tech jobs in Costa Rica. Browse remote and on-site positions from top tech companies.',
+    images: ['/og-image.png'],
+    creator: '@ticosintech',
+  },
+
+  // Additional SEO
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 
