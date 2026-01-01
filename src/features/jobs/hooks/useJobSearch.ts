@@ -8,9 +8,10 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { useLogger } from '@/lib/logging'
+import { createClient } from '@/lib/supabase/client'
 import type { SupabaseAppError } from '@/lib/supabase/errors'
 
 import { searchJobs as searchJobsApi } from '../api/jobService'
@@ -131,6 +132,9 @@ export function useJobSearch(): UseJobSearchReturn {
   const logger = useLogger('useJobSearch')
   const queryClient = useQueryClient()
 
+  // Create Supabase browser client (memoized to avoid recreation)
+  const supabase = useMemo(() => createClient(), [])
+
   // Track current search parameters
   const [searchParams, setSearchParams] = useState<SearchParameters | null>(
     null
@@ -167,7 +171,7 @@ export function useJobSearch(): UseJobSearchReturn {
         pagination,
       })
 
-      const result = await searchJobsApi(filters, pagination)
+      const result = await searchJobsApi(supabase, filters, pagination)
 
       // Handle API-level errors
       if (result.error) {
@@ -262,6 +266,7 @@ export function useJobSearch(): UseJobSearchReturn {
           queryKey: createQueryKey(newParams),
           queryFn: async (): Promise<SearchState> => {
             const apiResult = await searchJobsApi(
+              supabase,
               normalizedFilters,
               normalizedPagination
             )
@@ -286,7 +291,7 @@ export function useJobSearch(): UseJobSearchReturn {
         return emptyState
       }
     },
-    [searchParams, data, queryClient, logger]
+    [searchParams, data, queryClient, logger, supabase]
   )
 
   /**

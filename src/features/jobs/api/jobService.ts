@@ -1,13 +1,26 @@
-'use client'
-
 /**
  * Job Service
  *
  * High-level service layer for job-related operations.
  * Orchestrates repository calls and transforms data to frontend format.
+ *
+ * All functions accept a Supabase client as the first parameter,
+ * enabling use from both Server Components and Client Components.
+ *
+ * @example Server Component usage:
+ * ```typescript
+ * import { createClient } from '@/lib/supabase/server'
+ * import { searchJobs } from '@/features/jobs/api/jobService'
+ *
+ * export default async function Page() {
+ *   const supabase = await createClient()
+ *   const result = await searchJobs(supabase, filters, pagination)
+ * }
+ * ```
  */
 
 import type { SupabaseAppError } from '@/lib/supabase/errors'
+import type { SupabaseClient } from '@/lib/supabase/types'
 
 import type { JobSearchFilters, JobSearchPagination } from '../types/filters'
 import { toSearchJobsRpcParams } from '../types/filters'
@@ -53,11 +66,13 @@ export interface JobDetailResponse {
  * 3. Transforms the results to frontend format
  * 4. Handles errors gracefully
  *
+ * @param supabase - Supabase client (server or browser)
  * @param filters - Search filters including the query string
  * @param pagination - Pagination options (page, pageSize)
  * @returns Search results with jobs, pagination, and optional error
  */
 export async function searchJobs(
+  supabase: SupabaseClient,
   filters: JobSearchFilters,
   pagination: JobSearchPagination = {}
 ): Promise<JobSearchResponse> {
@@ -68,7 +83,7 @@ export async function searchJobs(
   const rpcParams = toSearchJobsRpcParams(filters, { page, pageSize })
 
   // Execute the search via repository
-  const result = await searchJobsRepository(rpcParams)
+  const result = await searchJobsRepository(supabase, rpcParams)
 
   // Handle errors
   if (result.error) {

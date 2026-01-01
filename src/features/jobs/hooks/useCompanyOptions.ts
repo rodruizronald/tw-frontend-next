@@ -7,9 +7,10 @@
  * Loads companies dynamically based on current search criteria.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useLogger } from '@/lib/logging'
+import { createClient } from '@/lib/supabase/client'
 import type { SupabaseAppError } from '@/lib/supabase/errors'
 
 import { getCompanies, getCompaniesForJobs } from '../api/jobRepository'
@@ -77,6 +78,9 @@ export function useCompanyOptions(
 ): UseCompanyOptionsReturn {
   const logger = useLogger('useCompanyOptions')
 
+  // Create Supabase browser client (memoized to avoid recreation)
+  const supabase = useMemo(() => createClient(), [])
+
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<SupabaseAppError | null>(null)
@@ -91,7 +95,7 @@ export function useCompanyOptions(
     logger.debug('Loading all companies')
 
     try {
-      const result = await getCompanies(100)
+      const result = await getCompanies(supabase, 100)
 
       if (result.error) {
         logger.error('Failed to load companies', {
@@ -114,8 +118,7 @@ export function useCompanyOptions(
     } finally {
       setIsLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // logger is stable, no need to include
+  }, [supabase, logger])
 
   /**
    * Refresh companies based on current search filters
@@ -140,7 +143,7 @@ export function useCompanyOptions(
         // Convert filters to RPC params (excluding company filter)
         const rpcParams = toGetCompaniesRpcParams(filters)
 
-        const result = await getCompaniesForJobs(rpcParams)
+        const result = await getCompaniesForJobs(supabase, rpcParams)
 
         if (result.error) {
           logger.error('Failed to refresh companies for search', {
@@ -167,8 +170,7 @@ export function useCompanyOptions(
         setIsLoading(false)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [loadAllCompanies] // logger is stable
+    [loadAllCompanies, supabase, logger]
   )
 
   // Auto-load companies on mount if enabled

@@ -14,4 +14,5 @@
 
 // Re-export types and errors
 export * from './errors'
+export type { SupabaseClient } from './types'
 export type { Database } from './types/database'

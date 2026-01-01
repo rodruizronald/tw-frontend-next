@@ -6,7 +6,8 @@
  * This component wraps the application with all necessary providers:
  * - MUI ThemeProvider for Material UI styling
  * - React Query Provider for data fetching
- * - Error Boundary for graceful error handling
+ *
+ * Note: Error handling is done via Next.js native error.tsx files.
  *
  * Usage (in layout.tsx):
  * ```tsx
@@ -28,12 +29,10 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { type ReactElement, type ReactNode } from 'react'
+import { type ReactElement, type ReactNode, useState } from 'react'
 
-import { getQueryClient } from '@/lib/query'
+import { makeQueryClient } from '@/lib/query'
 import { theme } from '@/lib/theme'
-
-import { ErrorBoundaryProvider } from './ErrorBoundaryProvider'
 
 // =============================================================================
 // Types
@@ -51,29 +50,31 @@ interface ProvidersProps {
  * Root Providers Component
  *
  * Wraps the application with all necessary context providers.
- * Order matters:
- * 1. ErrorBoundary (outermost - catches errors from all children)
- * 2. QueryClientProvider (for data fetching)
- * 3. ThemeProvider (for MUI styling)
+ * Error handling is done via Next.js native error.tsx files.
+ *
+ * QueryClient is created using useState to ensure:
+ * - Single instance per component lifecycle
+ * - No hydration mismatches (avoids typeof window checks)
+ * - Follows TanStack Query's recommended Next.js pattern
+ *
+ * @see https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
  */
 export function Providers({ children }: ProvidersProps): ReactElement {
-  // Get or create the query client
-  const queryClient = getQueryClient()
+  // Create QueryClient once using useState (TanStack Query recommended pattern)
+  const [queryClient] = useState(makeQueryClient)
 
   return (
-    <ErrorBoundaryProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          {/* CssBaseline provides consistent baseline styles */}
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        {/* CssBaseline provides consistent baseline styles */}
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
 
-        {/* React Query Devtools - only in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-      </QueryClientProvider>
-    </ErrorBoundaryProvider>
+      {/* React Query Devtools - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
+    </QueryClientProvider>
   )
 }
