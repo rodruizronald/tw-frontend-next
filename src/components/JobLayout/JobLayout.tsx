@@ -10,7 +10,7 @@
 import { Box } from '@mui/material'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { JobDetails, JobFilters, JobList } from '@/features/jobs/components'
 import { PAGINATION } from '@/features/jobs/constants'
@@ -20,32 +20,10 @@ import {
   useJobPagination,
   useJobSearch,
 } from '@/features/jobs/hooks'
+import { filtersToURLParams } from '@/features/jobs/types/filters'
 import type { Job } from '@/features/jobs/types/models'
 
 import Header from '../Header'
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-/**
- * Reset URL to page 1 (remove page parameter)
- * Updated for Next.js App Router
- */
-const resetToPageOne = (
-  router: ReturnType<typeof useRouter>,
-  pathname: string,
-  searchParams: URLSearchParams
-): void => {
-  const newSearchParams = new URLSearchParams(searchParams.toString())
-  newSearchParams.delete('p')
-
-  const newUrl = newSearchParams.toString()
-    ? `${pathname}?${newSearchParams.toString()}`
-    : pathname
-
-  router.replace(newUrl)
-}
 
 // =============================================================================
 // Component
@@ -57,9 +35,14 @@ export default function JobLayout(): ReactElement {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Search query state
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [appliedSearchQuery, setAppliedSearchQuery] = useState<string>('')
+  // Get applied search query from URL (source of truth for executed searches)
+  const appliedSearchQuery = useMemo(
+    () => searchParams.get('q') ?? '',
+    [searchParams]
+  )
+
+  // Search input state (controlled input, initialized from URL)
+  const [searchQuery, setSearchQuery] = useState<string>(appliedSearchQuery)
 
   // Job search hook
   const {
@@ -87,13 +70,13 @@ export default function JobLayout(): ReactElement {
     refreshForSearch,
   } = useCompanyOptions()
 
-  // Build complete filters with query
+  // Build complete filters with applied query (from URL)
   const buildFilters = useCallback(() => {
     return {
       ...filters,
-      query: searchQuery,
+      query: appliedSearchQuery,
     }
-  }, [filters, searchQuery])
+  }, [filters, appliedSearchQuery])
 
   // Pagination hook
   const {
@@ -113,28 +96,31 @@ export default function JobLayout(): ReactElement {
 
   /**
    * Handle search button click
+   * Updates URL with query and filters, which triggers the search via useEffect
    */
   const handleSearch = useCallback(async (): Promise<void> => {
     if (!searchQuery.trim()) return
 
-    // Reset to page 1 using Next.js router
-    resetToPageOne(
-      router,
-      pathname,
-      new URLSearchParams(searchParams.toString())
-    )
+    // Build filters with the current search query
+    const searchFilters = {
+      ...filters,
+      query: searchQuery.trim(),
+    }
+
+    // Create URL params with query and existing filters
+    const params = filtersToURLParams(searchFilters)
+
+    // Update URL (this will trigger search via useEffect that watches URL)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
 
     try {
-      const searchFilters = buildFilters()
-
       await search(searchFilters, {
         page: PAGINATION.DEFAULT_PAGE,
         pageSize: PAGINATION.PAGE_SIZE,
       })
 
-      // Clear selection and update applied query
+      // Clear selection
       setSelectedJobId(null)
-      setAppliedSearchQuery(searchQuery)
 
       // Refresh company options based on new search
       await refreshForSearch(searchFilters)
@@ -143,11 +129,10 @@ export default function JobLayout(): ReactElement {
     }
   }, [
     searchQuery,
-    buildFilters,
+    filters,
     search,
     router,
     pathname,
-    searchParams,
     setSelectedJobId,
     refreshForSearch,
   ])
@@ -179,8 +164,9 @@ export default function JobLayout(): ReactElement {
   const prevFiltersJsonRef = useRef<string>('')
 
   // Re-search when filters change (after initial search has been performed)
+  // appliedSearchQuery comes from URL, so this watches URL-based state
   useEffect(() => {
-    // Skip if no search has been performed yet
+    // Skip if no search has been performed yet (no query in URL)
     if (!appliedSearchQuery) {
       return
     }
@@ -205,6 +191,15 @@ export default function JobLayout(): ReactElement {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, appliedSearchQuery]) // search is stable from useJobSearch
+
+  // Sync search input with URL when navigating (e.g., back/forward buttons)
+  useEffect(() => {
+    if (appliedSearchQuery && appliedSearchQuery !== searchQuery) {
+      setSearchQuery(appliedSearchQuery)
+    }
+    // Only run when appliedSearchQuery changes (from URL navigation)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedSearchQuery])
 
   // ==========================================================================
   // Render
