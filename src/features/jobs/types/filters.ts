@@ -466,7 +466,7 @@ export function countActiveFilters(filters: Partial<JobSearchFilters>): number {
 
   // Count single-select (1 if set)
   if (filters.language) count += 1
-  if (filters.datePreset && filters.datePreset !== 'any') count += 1
+  if (filters.datePreset) count += 1
 
   return count
 }
@@ -488,10 +488,7 @@ export function countFilterSelections(
     return value.length
   }
 
-  if (key === 'datePreset') {
-    return value && value !== 'any' ? 1 : 0
-  }
-
+  // For single-select filters (language, datePreset), count as 1 if any value is set
   return value ? 1 : 0
 }
 

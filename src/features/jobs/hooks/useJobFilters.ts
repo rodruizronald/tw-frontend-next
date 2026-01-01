@@ -147,13 +147,14 @@ export function useJobFilters(
   const [filters, setFilters] = useState<Partial<JobSearchFilters>>(() => {
     if (syncWithUrl) {
       const urlFilters = urlParamsToFilters(searchParams)
-      // Default language to 'english' if not specified
+      // Default single-select filters if not specified
       return {
         ...urlFilters,
         language: urlFilters.language ?? 'english',
+        datePreset: urlFilters.datePreset ?? 'any',
       }
     }
-    return { language: 'english' }
+    return { language: 'english', datePreset: 'any' }
   })
 
   // Anchor elements for dropdowns
@@ -191,11 +192,12 @@ export function useJobFilters(
 
     // Parse filters from current URL and update state
     const urlFilters = urlParamsToFilters(searchParams)
-    // Default language to 'english' if not specified
+    // Default single-select filters if not specified
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing state from external URL changes
     setFilters({
       ...urlFilters,
       language: urlFilters.language ?? 'english',
+      datePreset: urlFilters.datePreset ?? 'any',
     })
   }, [searchParams, syncWithUrl])
 
@@ -263,11 +265,6 @@ export function useJobFilters(
         const newFilters = {
           ...prev,
           [key]: value,
-        }
-
-        // Remove datePreset if set to 'any'
-        if (key === 'datePreset' && value === 'any') {
-          delete newFilters.datePreset
         }
 
         // Sync to URL after state update
@@ -372,14 +369,10 @@ export function useJobFilters(
       }
     }
 
-    // Count single-select filters
+    // Count single-select filters (count as 1 if any value is set)
     for (const key of SINGLE_SELECT_FILTER_KEYS) {
       const value = filters[key]
-      if (key === 'datePreset') {
-        if (value && value !== 'any') count += 1
-      } else if (value) {
-        count += 1
-      }
+      if (value) count += 1
     }
 
     return count
