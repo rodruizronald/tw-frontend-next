@@ -46,7 +46,6 @@ Edit `.env.local` with your configuration:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
 NEXT_PUBLIC_LOG_LEVEL=debug
 ```
 
@@ -109,10 +108,7 @@ src/
 | `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL              | Yes      |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key            | Yes      |
 | `NEXT_PUBLIC_SITE_URL`          | Site URL for SEO                  | Yes      |
-| `NEXT_PUBLIC_API_BASE_URL`      | Backend API URL                   | No       |
 | `NEXT_PUBLIC_LOG_LEVEL`         | Log level (error/warn/info/debug) | No       |
-| `LOG_ENDPOINT`                  | Server-side logging endpoint      | No       |
-| `LOG_API_KEY`                   | Server-side logging API key       | No       |
 
 ## 🚀 Deployment
 

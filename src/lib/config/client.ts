@@ -27,9 +27,6 @@ const clientConfigSchema = z.object({
   supabaseUrl: z.string().url(),
   supabaseAnonKey: z.string().min(1),
 
-  // API
-  apiBaseUrl: z.string().url().optional(),
-
   // Logging
   logLevel: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 
@@ -48,7 +45,6 @@ function createClientConfig(): ClientConfig {
   const rawConfig = {
     supabaseUrl: process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '',
     supabaseAnonKey: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ?? '',
-    apiBaseUrl: process.env['NEXT_PUBLIC_API_BASE_URL'],
     logLevel: process.env['NEXT_PUBLIC_LOG_LEVEL'] ?? 'info',
     isProduction: process.env.NODE_ENV === 'production',
     isDevelopment: process.env.NODE_ENV === 'development',
@@ -73,7 +69,6 @@ function createClientConfig(): ClientConfig {
     return {
       supabaseUrl: rawConfig.supabaseUrl,
       supabaseAnonKey: rawConfig.supabaseAnonKey,
-      apiBaseUrl: rawConfig.apiBaseUrl,
       logLevel: 'error',
       isProduction: true,
       isDevelopment: false,

@@ -15,7 +15,7 @@
  * // In a Server Component or Route Handler
  * import { serverConfig } from '@/lib/config/server'
  *
- * console.log(serverConfig.logEndpoint) // Server-only!
+ * console.log(serverConfig.supabaseUrl)
  * ```
  */
 
@@ -30,13 +30,8 @@ const serverConfigSchema = z.object({
   supabaseUrl: z.string().url(),
   supabaseAnonKey: z.string().min(1),
 
-  // API (public)
-  apiBaseUrl: z.string().url().optional(),
-
-  // Logging (mixed)
+  // Logging
   logLevel: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  logEndpoint: z.string().optional(), // Server-only
-  logApiKey: z.string().optional(), // Server-only
 
   // Environment
   isProduction: z.boolean(),
@@ -51,17 +46,9 @@ export type ServerConfig = z.infer<typeof serverConfigSchema>
  */
 function createServerConfig(): ServerConfig {
   const rawConfig = {
-    // Public variables
     supabaseUrl: process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '',
     supabaseAnonKey: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ?? '',
-    apiBaseUrl: process.env['NEXT_PUBLIC_API_BASE_URL'],
     logLevel: process.env['NEXT_PUBLIC_LOG_LEVEL'] ?? 'info',
-
-    // Server-only variables (no NEXT_PUBLIC_ prefix)
-    logEndpoint: process.env['LOG_ENDPOINT'],
-    logApiKey: process.env['LOG_API_KEY'],
-
-    // Environment
     isProduction: process.env.NODE_ENV === 'production',
     isDevelopment: process.env.NODE_ENV === 'development',
     nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -85,10 +72,7 @@ function createServerConfig(): ServerConfig {
     return {
       supabaseUrl: rawConfig.supabaseUrl,
       supabaseAnonKey: rawConfig.supabaseAnonKey,
-      apiBaseUrl: rawConfig.apiBaseUrl,
       logLevel: 'error',
-      logEndpoint: undefined,
-      logApiKey: undefined,
       isProduction: true,
       isDevelopment: false,
       nodeEnv: 'production',
