@@ -1,20 +1,23 @@
-'use client'
-
 /**
  * React Query Client Configuration
  *
- * Provides a configured QueryClient with sensible defaults for the application.
+ * Provides a configured QueryClient factory with sensible defaults.
+ * The QueryClient instance is created and managed in the Providers component
+ * using useState, which is TanStack Query's recommended pattern for Next.js.
+ *
+ * @see https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
  */
 
 import { QueryClient } from '@tanstack/react-query'
 
 /**
- * Create a new QueryClient instance
+ * Create a new QueryClient instance with application defaults
  *
- * Note: In Next.js, we need to be careful about creating the QueryClient.
- * For client components, we create it once and reuse it.
+ * This factory function is called once in the Providers component via useState.
+ * Using useState ensures the client is created once per component lifecycle,
+ * avoiding hydration mismatches and unnecessary re-creation.
  */
-function makeQueryClient(): QueryClient {
+export function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
@@ -46,7 +49,7 @@ function makeQueryClient(): QueryClient {
         // Retry delay with exponential backoff
         retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
 
-        // Refetch on window focus (good for search results)
+        // Refetch on window focus
         refetchOnWindowFocus: false,
       },
       mutations: {
@@ -55,27 +58,4 @@ function makeQueryClient(): QueryClient {
       },
     },
   })
-}
-
-// Browser-side singleton
-let browserQueryClient: QueryClient | undefined
-
-/**
- * Get the QueryClient instance
- *
- * - On the server: Creates a new client for each request
- * - On the browser: Reuses the same client instance
- */
-export function getQueryClient(): QueryClient {
-  // Server-side: always create a new client
-  if (typeof window === 'undefined') {
-    return makeQueryClient()
-  }
-
-  // Browser-side: create once and reuse
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient()
-  }
-
-  return browserQueryClient
 }

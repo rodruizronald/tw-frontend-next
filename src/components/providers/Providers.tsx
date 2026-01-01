@@ -29,9 +29,9 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { type ReactElement, type ReactNode } from 'react'
+import { type ReactElement, type ReactNode, useState } from 'react'
 
-import { getQueryClient } from '@/lib/query'
+import { makeQueryClient } from '@/lib/query'
 import { theme } from '@/lib/theme'
 
 // =============================================================================
@@ -51,10 +51,17 @@ interface ProvidersProps {
  *
  * Wraps the application with all necessary context providers.
  * Error handling is done via Next.js native error.tsx files.
+ *
+ * QueryClient is created using useState to ensure:
+ * - Single instance per component lifecycle
+ * - No hydration mismatches (avoids typeof window checks)
+ * - Follows TanStack Query's recommended Next.js pattern
+ *
+ * @see https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
  */
 export function Providers({ children }: ProvidersProps): ReactElement {
-  // Get or create the query client
-  const queryClient = getQueryClient()
+  // Create QueryClient once using useState (TanStack Query recommended pattern)
+  const [queryClient] = useState(makeQueryClient)
 
   return (
     <QueryClientProvider client={queryClient}>
