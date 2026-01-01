@@ -26,6 +26,13 @@ import type { Job } from '@/features/jobs/types/models'
 import Header from '../Header'
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/** Default search query when none is provided */
+const DEFAULT_SEARCH_QUERY = 'engineer'
+
+// =============================================================================
 // Component
 // =============================================================================
 
@@ -37,11 +44,11 @@ export default function JobLayout(): ReactElement {
 
   // Get applied search query from URL (source of truth for executed searches)
   const appliedSearchQuery = useMemo(
-    () => searchParams.get('q') ?? '',
+    () => searchParams.get('q') ?? DEFAULT_SEARCH_QUERY,
     [searchParams]
   )
 
-  // Search input state (controlled input, initialized from URL)
+  // Search input state (controlled input, initialized from URL or default)
   const [searchQuery, setSearchQuery] = useState<string>(appliedSearchQuery)
 
   // Job search hook
@@ -97,14 +104,21 @@ export default function JobLayout(): ReactElement {
   /**
    * Handle search button click
    * Updates URL with query and filters, which triggers the search via useEffect
+   * If search query is empty, resets to default search query and submits
    */
   const handleSearch = useCallback(async (): Promise<void> => {
-    if (!searchQuery.trim()) return
+    // Use default search query if empty
+    const queryToSearch = searchQuery.trim() || DEFAULT_SEARCH_QUERY
 
-    // Build filters with the current search query
+    // Reset input to default if it was empty
+    if (!searchQuery.trim()) {
+      setSearchQuery(DEFAULT_SEARCH_QUERY)
+    }
+
+    // Build filters with the search query
     const searchFilters = {
       ...filters,
-      query: searchQuery.trim(),
+      query: queryToSearch,
     }
 
     // Create URL params with query and existing filters

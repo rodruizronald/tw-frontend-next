@@ -15,7 +15,7 @@
  */
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   DatePreset,
@@ -146,37 +146,77 @@ export function useJobFilters(
   // Filter state - initialize from URL on mount
   const [filters, setFilters] = useState<Partial<JobSearchFilters>>(() => {
     if (syncWithUrl) {
-      return urlParamsToFilters(searchParams)
+      const urlFilters = urlParamsToFilters(searchParams)
+      // Default language to 'english' if not specified
+      return {
+        ...urlFilters,
+        language: urlFilters.language ?? 'english',
+      }
     }
-    return {}
+    return { language: 'english' }
   })
 
   // Anchor elements for dropdowns
   const [anchorEls, setAnchorEls] = useState<AnchorElements>(INITIAL_ANCHORS)
+
+  // Track if this is the initial mount (skip URL sync on mount)
+  const isInitialMount = useRef(true)
+
+  // Track if we're currently pushing to URL (to avoid sync loop)
+  const isPushingToUrl = useRef(false)
 
   // ==========================================================================
   // URL Sync
   // ==========================================================================
 
   /**
-   * Update URL with current filters
+   * Sync filters FROM URL when URL changes externally
+   * (e.g., browser back/forward, or other components updating URL)
    */
-  const updateUrl = useCallback(
-    (newFilters: Partial<JobSearchFilters>): void => {
+  useEffect(() => {
+    // Skip if URL sync is disabled
+    if (!syncWithUrl) return
+
+    // Skip on initial mount (already initialized from URL in useState)
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
+    // Skip if we caused this URL change (we're pushing to URL)
+    if (isPushingToUrl.current) {
+      isPushingToUrl.current = false
+      return
+    }
+
+    // Parse filters from current URL and update state
+    const urlFilters = urlParamsToFilters(searchParams)
+    // Default language to 'english' if not specified
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing state from external URL changes
+    setFilters({
+      ...urlFilters,
+      language: urlFilters.language ?? 'english',
+    })
+  }, [searchParams, syncWithUrl])
+
+  /**
+   * Sync filters TO URL when filters state changes (via user action)
+   */
+  const syncFiltersToUrl = useCallback(
+    (newFilters: Partial<JobSearchFilters>) => {
       if (!syncWithUrl) return
 
       const params = filtersToURLParams(newFilters)
+      const newUrl = `${pathname}?${params.toString()}`
+      const currentUrl = `${pathname}?${searchParams.toString()}`
 
-      // Preserve non-filter params (like page)
-      const currentPage = searchParams.get('p')
-      if (currentPage) {
-        params.set('p', currentPage)
+      // Only update if URL would actually change
+      if (newUrl !== currentUrl) {
+        isPushingToUrl.current = true
+        router.replace(newUrl, { scroll: false })
       }
-
-      // Update URL without full navigation (replace state)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     },
-    [syncWithUrl, searchParams, router, pathname]
+    [syncWithUrl, pathname, searchParams, router]
   )
 
   // ==========================================================================
@@ -202,11 +242,13 @@ export function useJobFilters(
           delete newFilters[key]
         }
 
-        updateUrl(newFilters)
+        // Sync to URL after state update (in next tick to ensure state is updated)
+        setTimeout(() => syncFiltersToUrl(newFilters), 0)
+
         return newFilters
       })
     },
-    [updateUrl]
+    [syncFiltersToUrl]
   )
 
   /**
@@ -228,11 +270,13 @@ export function useJobFilters(
           delete newFilters.datePreset
         }
 
-        updateUrl(newFilters)
+        // Sync to URL after state update
+        setTimeout(() => syncFiltersToUrl(newFilters), 0)
+
         return newFilters
       })
     },
-    [updateUrl]
+    [syncFiltersToUrl]
   )
 
   /**
@@ -243,27 +287,34 @@ export function useJobFilters(
       setFilters(prev => {
         const newFilters = { ...prev }
         delete newFilters[key]
-        updateUrl(newFilters)
+
+        // Sync to URL after state update
+        setTimeout(() => syncFiltersToUrl(newFilters), 0)
+
         return newFilters
       })
     },
-    [updateUrl]
+    [syncFiltersToUrl]
   )
 
   /**
    * Clear all filters
    */
   const clearAllFilters = useCallback((): void => {
-    const newFilters: Partial<JobSearchFilters> = {}
+    setFilters(prev => {
+      const newFilters: Partial<JobSearchFilters> = {}
 
-    // Preserve query if it exists
-    if (filters.query) {
-      newFilters.query = filters.query
-    }
+      // Preserve query if it exists
+      if (prev.query) {
+        newFilters.query = prev.query
+      }
 
-    setFilters(newFilters)
-    updateUrl(newFilters)
-  }, [filters.query, updateUrl])
+      // Sync to URL after state update
+      setTimeout(() => syncFiltersToUrl(newFilters), 0)
+
+      return newFilters
+    })
+  }, [syncFiltersToUrl])
 
   // ==========================================================================
   // Dropdown Actions
