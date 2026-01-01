@@ -183,6 +183,23 @@ export default function JobLayout(): ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedSearchQuery])
 
+  // Perform initial search on mount with default query and filters
+  useEffect(() => {
+    const initialFilters = {
+      ...filters,
+      query: appliedSearchQuery,
+    }
+
+    search(initialFilters, {
+      page: PAGINATION.DEFAULT_PAGE,
+      pageSize: PAGINATION.PAGE_SIZE,
+    })
+
+    refreshForSearch(initialFilters)
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ==========================================================================
   // Render
   // ==========================================================================
