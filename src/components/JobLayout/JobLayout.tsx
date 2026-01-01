@@ -10,7 +10,7 @@
 import { Box } from '@mui/material'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { JobDetails, JobFilters, JobList } from '@/features/jobs/components'
 import { PAGINATION } from '@/features/jobs/constants'
@@ -173,38 +173,6 @@ export default function JobLayout(): ReactElement {
     },
     [openDropdown]
   )
-
-  // Track previous filters to detect changes
-  const prevFiltersJsonRef = useRef<string>('')
-
-  // Re-search when filters change (after initial search has been performed)
-  // appliedSearchQuery comes from URL, so this watches URL-based state
-  useEffect(() => {
-    // Skip if no search has been performed yet (no query in URL)
-    if (!appliedSearchQuery) {
-      return
-    }
-
-    // Compare filters by JSON to detect actual changes
-    const currentFiltersJson = JSON.stringify(filters)
-    if (prevFiltersJsonRef.current === currentFiltersJson) {
-      return
-    }
-
-    // Update ref and trigger search
-    prevFiltersJsonRef.current = currentFiltersJson
-
-    const searchFilters = {
-      ...filters,
-      query: appliedSearchQuery,
-    }
-
-    search(searchFilters, {
-      page: PAGINATION.DEFAULT_PAGE,
-      pageSize: PAGINATION.PAGE_SIZE,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, appliedSearchQuery]) // search is stable from useJobSearch
 
   // Sync search input with URL when navigating (e.g., back/forward buttons)
   useEffect(() => {
