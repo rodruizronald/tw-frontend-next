@@ -28,7 +28,8 @@ import type { Database } from './types/database'
  */
 export function createClient() {
   const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
-  const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+  const supabasePublishableKey =
+    process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY']
 
   if (!supabaseUrl) {
     throw new Error(
@@ -37,14 +38,14 @@ export function createClient() {
     )
   }
 
-  if (!supabaseAnonKey) {
+  if (!supabasePublishableKey) {
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. ' +
+      'Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variable. ' +
         'Please add it to your .env.local file.'
     )
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey)
 }
 
 /**

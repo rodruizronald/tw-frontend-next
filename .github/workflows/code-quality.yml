@@ -52,7 +52,7 @@ jobs:
       - name: Build Next.js application
         run: npm run build
         env:
-          # Provide minimal env vars for build to succeed
+          # Required for build: Supabase client validates these at import time
+          # Using placeholder values since actual keys are not needed for build verification
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder_key
-          NEXT_PUBLIC_SITE_URL: https://ticosintech.com
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder_key

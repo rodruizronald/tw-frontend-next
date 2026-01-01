@@ -28,7 +28,7 @@ import { z } from 'zod'
 const serverConfigSchema = z.object({
   // Supabase (public)
   supabaseUrl: z.string().url(),
-  supabaseAnonKey: z.string().min(1),
+  supabasePublishableKey: z.string().min(1),
 
   // Logging
   logLevel: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
@@ -47,7 +47,8 @@ export type ServerConfig = z.infer<typeof serverConfigSchema>
 function createServerConfig(): ServerConfig {
   const rawConfig = {
     supabaseUrl: process.env['NEXT_PUBLIC_SUPABASE_URL'] ?? '',
-    supabaseAnonKey: process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] ?? '',
+    supabasePublishableKey:
+      process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'] ?? '',
     logLevel: process.env['NEXT_PUBLIC_LOG_LEVEL'] ?? 'info',
     isProduction: process.env.NODE_ENV === 'production',
     isDevelopment: process.env.NODE_ENV === 'development',
@@ -71,7 +72,7 @@ function createServerConfig(): ServerConfig {
     // In production, return with defaults
     return {
       supabaseUrl: rawConfig.supabaseUrl,
-      supabaseAnonKey: rawConfig.supabaseAnonKey,
+      supabasePublishableKey: rawConfig.supabasePublishableKey,
       logLevel: 'error',
       isProduction: true,
       isDevelopment: false,

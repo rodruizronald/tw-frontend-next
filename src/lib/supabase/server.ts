@@ -43,7 +43,8 @@ import type { Database } from './types/database'
  */
 export async function createClient() {
   const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL']
-  const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+  const supabasePublishableKey =
+    process.env['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY']
 
   if (!supabaseUrl) {
     throw new Error(
@@ -52,16 +53,16 @@ export async function createClient() {
     )
   }
 
-  if (!supabaseAnonKey) {
+  if (!supabasePublishableKey) {
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable. ' +
+      'Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY environment variable. ' +
         'Please add it to your .env.local file.'
     )
   }
 
   const cookieStore = await cookies()
 
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll()
