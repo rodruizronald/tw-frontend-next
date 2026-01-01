@@ -7,14 +7,14 @@
  * - Multi-select filters (arrays)
  * - Single-select filters (radio buttons)
  * - Dropdown anchor elements
- * - URL synchronization
+ * - URL synchronization (one-way: URL -> state only)
  *
- * Next.js Migration Notes:
- * - Replaced react-router-dom useSearchParams with next/navigation
- * - URL updates use router.replace() instead of setSearchParams()
+ * Note: Filter changes do NOT automatically update the URL.
+ * URL is only updated when user clicks the Search button (handled in JobLayout).
+ * This optimizes performance by avoiding unnecessary requests on each filter toggle.
  */
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
@@ -26,7 +26,6 @@ import type {
 } from '../types/filters'
 import {
   countFilterSelections,
-  filtersToURLParams,
   hasActiveFilters,
   MULTI_SELECT_FILTER_KEYS,
   SINGLE_SELECT_FILTER_KEYS,
@@ -139,8 +138,6 @@ export function useJobFilters(
   syncWithUrl: boolean = true
 ): UseJobFiltersReturn {
   // Next.js navigation hooks
-  const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   // Filter state - initialize from URL on mount
@@ -163,16 +160,13 @@ export function useJobFilters(
   // Track if this is the initial mount (skip URL sync on mount)
   const isInitialMount = useRef(true)
 
-  // Track if we're currently pushing to URL (to avoid sync loop)
-  const isPushingToUrl = useRef(false)
-
   // ==========================================================================
   // URL Sync
   // ==========================================================================
 
   /**
    * Sync filters FROM URL when URL changes externally
-   * (e.g., browser back/forward, or other components updating URL)
+   * (e.g., browser back/forward, or Search button updating URL)
    */
   useEffect(() => {
     // Skip if URL sync is disabled
@@ -181,12 +175,6 @@ export function useJobFilters(
     // Skip on initial mount (already initialized from URL in useState)
     if (isInitialMount.current) {
       isInitialMount.current = false
-      return
-    }
-
-    // Skip if we caused this URL change (we're pushing to URL)
-    if (isPushingToUrl.current) {
-      isPushingToUrl.current = false
       return
     }
 
@@ -201,32 +189,13 @@ export function useJobFilters(
     })
   }, [searchParams, syncWithUrl])
 
-  /**
-   * Sync filters TO URL when filters state changes (via user action)
-   */
-  const syncFiltersToUrl = useCallback(
-    (newFilters: Partial<JobSearchFilters>) => {
-      if (!syncWithUrl) return
-
-      const params = filtersToURLParams(newFilters)
-      const newUrl = `${pathname}?${params.toString()}`
-      const currentUrl = `${pathname}?${searchParams.toString()}`
-
-      // Only update if URL would actually change
-      if (newUrl !== currentUrl) {
-        isPushingToUrl.current = true
-        router.replace(newUrl, { scroll: false })
-      }
-    },
-    [syncWithUrl, pathname, searchParams, router]
-  )
-
   // ==========================================================================
   // Filter Actions
   // ==========================================================================
 
   /**
    * Toggle a value in a multi-select filter
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const toggleFilter = useCallback(
     (key: MultiSelectFilterKey, value: string): void => {
@@ -244,17 +213,15 @@ export function useJobFilters(
           delete newFilters[key]
         }
 
-        // Sync to URL after state update (in next tick to ensure state is updated)
-        setTimeout(() => syncFiltersToUrl(newFilters), 0)
-
         return newFilters
       })
     },
-    [syncFiltersToUrl]
+    []
   )
 
   /**
    * Set a single-select filter value
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const setFilter = useCallback(
     <K extends SingleSelectFilterKey>(
@@ -267,35 +234,28 @@ export function useJobFilters(
           [key]: value,
         }
 
-        // Sync to URL after state update
-        setTimeout(() => syncFiltersToUrl(newFilters), 0)
-
         return newFilters
       })
     },
-    [syncFiltersToUrl]
+    []
   )
 
   /**
    * Clear a specific filter
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
-  const clearFilter = useCallback(
-    (key: FilterKey): void => {
-      setFilters(prev => {
-        const newFilters = { ...prev }
-        delete newFilters[key]
+  const clearFilter = useCallback((key: FilterKey): void => {
+    setFilters(prev => {
+      const newFilters = { ...prev }
+      delete newFilters[key]
 
-        // Sync to URL after state update
-        setTimeout(() => syncFiltersToUrl(newFilters), 0)
-
-        return newFilters
-      })
-    },
-    [syncFiltersToUrl]
-  )
+      return newFilters
+    })
+  }, [])
 
   /**
    * Clear all filters
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const clearAllFilters = useCallback((): void => {
     setFilters(prev => {
@@ -306,12 +266,9 @@ export function useJobFilters(
         newFilters.query = prev.query
       }
 
-      // Sync to URL after state update
-      setTimeout(() => syncFiltersToUrl(newFilters), 0)
-
       return newFilters
     })
-  }, [syncFiltersToUrl])
+  }, [])
 
   // ==========================================================================
   // Dropdown Actions
