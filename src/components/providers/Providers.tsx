@@ -6,7 +6,8 @@
  * This component wraps the application with all necessary providers:
  * - MUI ThemeProvider for Material UI styling
  * - React Query Provider for data fetching
- * - Error Boundary for graceful error handling
+ *
+ * Note: Error handling is done via Next.js native error.tsx files.
  *
  * Usage (in layout.tsx):
  * ```tsx
@@ -33,8 +34,6 @@ import { type ReactElement, type ReactNode } from 'react'
 import { getQueryClient } from '@/lib/query'
 import { theme } from '@/lib/theme'
 
-import { ErrorBoundaryProvider } from './ErrorBoundaryProvider'
-
 // =============================================================================
 // Types
 // =============================================================================
@@ -51,29 +50,24 @@ interface ProvidersProps {
  * Root Providers Component
  *
  * Wraps the application with all necessary context providers.
- * Order matters:
- * 1. ErrorBoundary (outermost - catches errors from all children)
- * 2. QueryClientProvider (for data fetching)
- * 3. ThemeProvider (for MUI styling)
+ * Error handling is done via Next.js native error.tsx files.
  */
 export function Providers({ children }: ProvidersProps): ReactElement {
   // Get or create the query client
   const queryClient = getQueryClient()
 
   return (
-    <ErrorBoundaryProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          {/* CssBaseline provides consistent baseline styles */}
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        {/* CssBaseline provides consistent baseline styles */}
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
 
-        {/* React Query Devtools - only in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
-      </QueryClientProvider>
-    </ErrorBoundaryProvider>
+      {/* React Query Devtools - only in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
+    </QueryClientProvider>
   )
 }
