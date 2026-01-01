@@ -1,18 +1,40 @@
-'use client'
-
 /**
  * Job Repository
  *
  * Low-level data access layer for job-related Supabase operations.
  * This module handles direct communication with Supabase and returns
  * raw database types. Use JobService for transformed frontend types.
+ *
+ * All functions accept a Supabase client as the first parameter,
+ * enabling use from both Server Components and Client Components.
+ * This follows the dependency injection pattern recommended for Next.js.
+ *
+ * @example Server Component usage:
+ * ```typescript
+ * import { createClient } from '@/lib/supabase/server'
+ * import { searchJobs } from '@/features/jobs/api/jobRepository'
+ *
+ * export default async function Page() {
+ *   const supabase = await createClient()
+ *   const result = await searchJobs(supabase, params)
+ * }
+ * ```
+ *
+ * @example Client Component usage:
+ * ```typescript
+ * import { createClient } from '@/lib/supabase/client'
+ * import { searchJobs } from '@/features/jobs/api/jobRepository'
+ *
+ * const supabase = createClient()
+ * const result = await searchJobs(supabase, params)
+ * ```
  */
 
-import { createClient } from '@/lib/supabase/client'
 import {
   handleUnknownError,
   type SupabaseAppError,
 } from '@/lib/supabase/errors'
+import type { SupabaseClient } from '@/lib/supabase/types'
 import type { Database } from '@/lib/supabase/types/database'
 
 import type {
@@ -76,15 +98,15 @@ export interface CompanySearchRepositoryResult {
  * - Pagination with LIMIT and OFFSET
  * - Total count using COUNT(*) OVER() window function
  *
+ * @param supabase - Supabase client (server or browser)
  * @param params - Search parameters matching the RPC function signature
  * @returns Job search results with total count or error
  */
 export async function searchJobs(
+  supabase: SupabaseClient,
   params: SearchJobsRpcParams
 ): Promise<JobSearchRepositoryResult> {
   try {
-    const supabase = createClient()
-
     // Build RPC parameters, only including defined values
     // This is required for TypeScript's exactOptionalPropertyTypes
     const rpcParams: Database['public']['Functions']['search_jobs']['Args'] = {
@@ -144,16 +166,18 @@ export async function searchJobs(
 /**
  * Get a single job by ID
  *
+ * @param supabase - Supabase client (server or browser)
  * @param jobId - The job ID to fetch
  * @returns The job row or null if not found
  */
-export async function getJobById(jobId: number): Promise<{
+export async function getJobById(
+  supabase: SupabaseClient,
+  jobId: number
+): Promise<{
   data: Database['public']['Tables']['jobs']['Row'] | null
   error: SupabaseAppError | null
 }> {
   try {
-    const supabase = createClient()
-
     const { data, error } = await supabase
       .from('jobs')
       .select('*')
@@ -183,10 +207,14 @@ export async function getJobById(jobId: number): Promise<{
 /**
  * Get a job with its company information
  *
+ * @param supabase - Supabase client (server or browser)
  * @param jobId - The job ID to fetch
  * @returns The job with company data or null if not found
  */
-export async function getJobWithCompany(jobId: number): Promise<{
+export async function getJobWithCompany(
+  supabase: SupabaseClient,
+  jobId: number
+): Promise<{
   data:
     | (Database['public']['Tables']['jobs']['Row'] & {
         companies: CompanyRow | null
@@ -195,8 +223,6 @@ export async function getJobWithCompany(jobId: number): Promise<{
   error: SupabaseAppError | null
 }> {
   try {
-    const supabase = createClient()
-
     const { data, error } = await supabase
       .from('jobs')
       .select('*, companies(*)')
@@ -226,16 +252,18 @@ export async function getJobWithCompany(jobId: number): Promise<{
 /**
  * Get company by name (exact match, case-insensitive)
  *
+ * @param supabase - Supabase client (server or browser)
  * @param companyName - The company name to search for
  * @returns The company row or null if not found
  */
-export async function getCompanyByName(companyName: string): Promise<{
+export async function getCompanyByName(
+  supabase: SupabaseClient,
+  companyName: string
+): Promise<{
   data: CompanyRow | null
   error: SupabaseAppError | null
 }> {
   try {
-    const supabase = createClient()
-
     const { data, error } = await supabase
       .from('companies')
       .select('*')
@@ -265,16 +293,18 @@ export async function getCompanyByName(companyName: string): Promise<{
 /**
  * Get all active companies (for autocomplete/dropdown)
  *
+ * @param supabase - Supabase client (server or browser)
  * @param limit - Maximum number of companies to return
  * @returns Array of company rows
  */
-export async function getCompanies(limit: number = 100): Promise<{
+export async function getCompanies(
+  supabase: SupabaseClient,
+  limit: number = 100
+): Promise<{
   data: CompanyRow[]
   error: SupabaseAppError | null
 }> {
   try {
-    const supabase = createClient()
-
     const { data, error } = await supabase
       .from('companies')
       .select('*')
@@ -309,15 +339,15 @@ export async function getCompanies(limit: number = 100): Promise<{
  * - Returns company names with job counts
  * - Useful for populating the company filter dropdown dynamically
  *
+ * @param supabase - Supabase client (server or browser)
  * @param params - Search parameters (same as job search, excluding company filter)
  * @returns Array of company names with job counts or error
  */
 export async function getCompaniesForJobs(
+  supabase: SupabaseClient,
   params: GetCompaniesRpcParams
 ): Promise<CompanySearchRepositoryResult> {
   try {
-    const supabase = createClient()
-
     // Build RPC parameters, only including defined values
     const rpcParams: Database['public']['Functions']['get_companies_for_search']['Args'] =
       {
