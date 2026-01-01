@@ -3,6 +3,8 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Roboto } from 'next/font/google'
 
+import { Providers } from '@/components/providers'
+
 /**
  * Roboto font configuration
  * Matches MUI's default typography
@@ -40,8 +42,9 @@ export const metadata: Metadata = {
 /**
  * Root Layout
  *
- * The root layout wraps all pages. Providers (MUI Theme, React Query, etc.)
- * will be added in Phase 3 of the migration.
+ * The root layout wraps all pages with:
+ * - Providers: MUI Theme, React Query, Error Boundary
+ * - Roboto font from next/font/google
  */
 export default function RootLayout({
   children,
@@ -51,8 +54,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={roboto.className}>
-        {/* TODO: Add Providers wrapper in Phase 3 */}
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )
