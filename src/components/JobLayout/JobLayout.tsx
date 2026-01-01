@@ -190,6 +190,10 @@ export default function JobLayout(): ReactElement {
       query: appliedSearchQuery,
     }
 
+    // Update URL to reflect the initial search state (for shareability/bookmarking)
+    const params = filtersToURLParams(initialFilters)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+
     search(initialFilters, {
       page: PAGINATION.DEFAULT_PAGE,
       pageSize: PAGINATION.PAGE_SIZE,
