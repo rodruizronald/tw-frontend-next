@@ -1,4 +1,8 @@
+import { Box, CircularProgress } from '@mui/material'
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
+
+import JobLayout from '@/components/JobLayout'
 
 /**
  * Page Metadata
@@ -11,37 +15,35 @@ export const metadata: Metadata = {
 }
 
 /**
+ * Loading fallback for job search page
+ */
+function JobSearchLoading(): React.ReactElement {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        bgcolor: '#f5f5f5',
+      }}
+    >
+      <CircularProgress size={48} />
+    </Box>
+  )
+}
+
+/**
  * Job Search Page
  *
- * This page will render the job search interface.
- * The JobLayout component will be added in Phase 4.
+ * Main job search interface with filters, job list, and job details.
+ * Wrapped in Suspense because it uses useSearchParams() which requires
+ * a Suspense boundary in Next.js App Router.
  */
 export default function JobSearchPage(): React.ReactElement {
   return (
-    <main>
-      {/* 
-        TODO: Add JobLayout component in Phase 4
-        <JobLayout />
-      */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: '2rem',
-          textAlign: 'center',
-        }}
-      >
-        <h1>Ticos in Tech - Job Search</h1>
-        <p style={{ marginTop: '1rem', color: '#666' }}>
-          Job search interface coming in Phase 4...
-        </p>
-        <p style={{ marginTop: '0.5rem', color: '#999', fontSize: '0.875rem' }}>
-          ✅ Phase 3 Complete: Providers are working!
-        </p>
-      </div>
-    </main>
+    <Suspense fallback={<JobSearchLoading />}>
+      <JobLayout />
+    </Suspense>
   )
 }
