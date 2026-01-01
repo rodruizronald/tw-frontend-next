@@ -46,12 +46,14 @@ export const metadata: Metadata = {
   publisher: 'Ticos in Tech',
 
   // Favicon and icons
+  // TODO: Add apple-touch-icon.png (180x180) for iOS devices
   icons: {
     icon: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
+    // apple: '/apple-touch-icon.png', // Uncomment when available
   },
 
   // Open Graph (Facebook, LinkedIn, etc.)
+  // TODO: Create og-image.png (1200x630) for better social sharing previews
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -61,23 +63,24 @@ export const metadata: Metadata = {
     title: 'Ticos in Tech - Costa Rica Tech Jobs',
     description:
       'Find the best tech jobs in Costa Rica. Browse remote and on-site positions from top tech companies.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Ticos in Tech - Find Tech Jobs in Costa Rica',
-      },
-    ],
+    // images: [
+    //   {
+    //     url: '/og-image.png',
+    //     width: 1200,
+    //     height: 630,
+    //     alt: 'Ticos in Tech - Find Tech Jobs in Costa Rica',
+    //   },
+    // ],
   },
 
   // Twitter Card
+  // TODO: Create twitter-image.png (1200x600) for Twitter previews
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Ticos in Tech - Costa Rica Tech Jobs',
     description:
       'Find the best tech jobs in Costa Rica. Browse remote and on-site positions from top tech companies.',
-    images: ['/og-image.png'],
+    // images: ['/og-image.png'], // Uncomment when available
     creator: '@ticosintech',
   },
 

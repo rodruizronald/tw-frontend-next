@@ -12,6 +12,21 @@ export const metadata: Metadata = {
   title: 'Search Jobs',
   description:
     'Search for tech jobs in Costa Rica. Find remote and on-site positions from top tech companies.',
+  keywords: [
+    'job search',
+    'tech jobs costa rica',
+    'remote developer jobs',
+    'software engineer positions',
+    'IT careers',
+    'buscar empleo',
+    'trabajos tecnologia',
+  ],
+  openGraph: {
+    title: 'Search Tech Jobs | Ticos in Tech',
+    description:
+      'Browse and filter tech job opportunities in Costa Rica. Find your next role in software development, engineering, and IT.',
+    url: '/jobs/search',
+  },
 }
 
 /**
