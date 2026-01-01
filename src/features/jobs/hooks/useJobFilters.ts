@@ -7,15 +7,15 @@
  * - Multi-select filters (arrays)
  * - Single-select filters (radio buttons)
  * - Dropdown anchor elements
- * - URL synchronization
+ * - URL synchronization (one-way: URL -> state only)
  *
- * Next.js Migration Notes:
- * - Replaced react-router-dom useSearchParams with next/navigation
- * - URL updates use router.replace() instead of setSearchParams()
+ * Note: Filter changes do NOT automatically update the URL.
+ * URL is only updated when user clicks the Search button (handled in JobLayout).
+ * This optimizes performance by avoiding unnecessary requests on each filter toggle.
  */
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   DatePreset,
@@ -26,7 +26,6 @@ import type {
 } from '../types/filters'
 import {
   countFilterSelections,
-  filtersToURLParams,
   hasActiveFilters,
   MULTI_SELECT_FILTER_KEYS,
   SINGLE_SELECT_FILTER_KEYS,
@@ -139,45 +138,56 @@ export function useJobFilters(
   syncWithUrl: boolean = true
 ): UseJobFiltersReturn {
   // Next.js navigation hooks
-  const router = useRouter()
-  const pathname = usePathname()
   const searchParams = useSearchParams()
 
   // Filter state - initialize from URL on mount
   const [filters, setFilters] = useState<Partial<JobSearchFilters>>(() => {
     if (syncWithUrl) {
-      return urlParamsToFilters(searchParams)
+      const urlFilters = urlParamsToFilters(searchParams)
+      // Default single-select filters if not specified
+      return {
+        ...urlFilters,
+        language: urlFilters.language ?? 'english',
+        datePreset: urlFilters.datePreset ?? 'any',
+      }
     }
-    return {}
+    return { language: 'english', datePreset: 'any' }
   })
 
   // Anchor elements for dropdowns
   const [anchorEls, setAnchorEls] = useState<AnchorElements>(INITIAL_ANCHORS)
+
+  // Track if this is the initial mount (skip URL sync on mount)
+  const isInitialMount = useRef(true)
 
   // ==========================================================================
   // URL Sync
   // ==========================================================================
 
   /**
-   * Update URL with current filters
+   * Sync filters FROM URL when URL changes externally
+   * (e.g., browser back/forward, or Search button updating URL)
    */
-  const updateUrl = useCallback(
-    (newFilters: Partial<JobSearchFilters>): void => {
-      if (!syncWithUrl) return
+  useEffect(() => {
+    // Skip if URL sync is disabled
+    if (!syncWithUrl) return
 
-      const params = filtersToURLParams(newFilters)
+    // Skip on initial mount (already initialized from URL in useState)
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
 
-      // Preserve non-filter params (like page)
-      const currentPage = searchParams.get('p')
-      if (currentPage) {
-        params.set('p', currentPage)
-      }
-
-      // Update URL without full navigation (replace state)
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-    },
-    [syncWithUrl, searchParams, router, pathname]
-  )
+    // Parse filters from current URL and update state
+    const urlFilters = urlParamsToFilters(searchParams)
+    // Default single-select filters if not specified
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncing state from external URL changes
+    setFilters({
+      ...urlFilters,
+      language: urlFilters.language ?? 'english',
+      datePreset: urlFilters.datePreset ?? 'any',
+    })
+  }, [searchParams, syncWithUrl])
 
   // ==========================================================================
   // Filter Actions
@@ -185,6 +195,7 @@ export function useJobFilters(
 
   /**
    * Toggle a value in a multi-select filter
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const toggleFilter = useCallback(
     (key: MultiSelectFilterKey, value: string): void => {
@@ -202,15 +213,15 @@ export function useJobFilters(
           delete newFilters[key]
         }
 
-        updateUrl(newFilters)
         return newFilters
       })
     },
-    [updateUrl]
+    []
   )
 
   /**
    * Set a single-select filter value
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const setFilter = useCallback(
     <K extends SingleSelectFilterKey>(
@@ -223,47 +234,41 @@ export function useJobFilters(
           [key]: value,
         }
 
-        // Remove datePreset if set to 'any'
-        if (key === 'datePreset' && value === 'any') {
-          delete newFilters.datePreset
-        }
-
-        updateUrl(newFilters)
         return newFilters
       })
     },
-    [updateUrl]
+    []
   )
 
   /**
    * Clear a specific filter
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
-  const clearFilter = useCallback(
-    (key: FilterKey): void => {
-      setFilters(prev => {
-        const newFilters = { ...prev }
-        delete newFilters[key]
-        updateUrl(newFilters)
-        return newFilters
-      })
-    },
-    [updateUrl]
-  )
+  const clearFilter = useCallback((key: FilterKey): void => {
+    setFilters(prev => {
+      const newFilters = { ...prev }
+      delete newFilters[key]
+
+      return newFilters
+    })
+  }, [])
 
   /**
    * Clear all filters
+   * Note: Does not sync to URL - URL is updated when user clicks Search
    */
   const clearAllFilters = useCallback((): void => {
-    const newFilters: Partial<JobSearchFilters> = {}
+    setFilters(prev => {
+      const newFilters: Partial<JobSearchFilters> = {}
 
-    // Preserve query if it exists
-    if (filters.query) {
-      newFilters.query = filters.query
-    }
+      // Preserve query if it exists
+      if (prev.query) {
+        newFilters.query = prev.query
+      }
 
-    setFilters(newFilters)
-    updateUrl(newFilters)
-  }, [filters.query, updateUrl])
+      return newFilters
+    })
+  }, [])
 
   // ==========================================================================
   // Dropdown Actions
@@ -321,14 +326,10 @@ export function useJobFilters(
       }
     }
 
-    // Count single-select filters
+    // Count single-select filters (count as 1 if any value is set)
     for (const key of SINGLE_SELECT_FILTER_KEYS) {
       const value = filters[key]
-      if (key === 'datePreset') {
-        if (value && value !== 'any') count += 1
-      } else if (value) {
-        count += 1
-      }
+      if (value) count += 1
     }
 
     return count

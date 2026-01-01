@@ -10,7 +10,7 @@
 import { Box } from '@mui/material'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { JobDetails, JobFilters, JobList } from '@/features/jobs/components'
 import { PAGINATION } from '@/features/jobs/constants'
@@ -26,6 +26,13 @@ import type { Job } from '@/features/jobs/types/models'
 import Header from '../Header'
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/** Default search query when none is provided */
+const DEFAULT_SEARCH_QUERY = 'engineer'
+
+// =============================================================================
 // Component
 // =============================================================================
 
@@ -37,11 +44,11 @@ export default function JobLayout(): ReactElement {
 
   // Get applied search query from URL (source of truth for executed searches)
   const appliedSearchQuery = useMemo(
-    () => searchParams.get('q') ?? '',
+    () => searchParams.get('q') ?? DEFAULT_SEARCH_QUERY,
     [searchParams]
   )
 
-  // Search input state (controlled input, initialized from URL)
+  // Search input state (controlled input, initialized from URL or default)
   const [searchQuery, setSearchQuery] = useState<string>(appliedSearchQuery)
 
   // Job search hook
@@ -97,14 +104,21 @@ export default function JobLayout(): ReactElement {
   /**
    * Handle search button click
    * Updates URL with query and filters, which triggers the search via useEffect
+   * If search query is empty, resets to default search query and submits
    */
   const handleSearch = useCallback(async (): Promise<void> => {
-    if (!searchQuery.trim()) return
+    // Use default search query if empty
+    const queryToSearch = searchQuery.trim() || DEFAULT_SEARCH_QUERY
 
-    // Build filters with the current search query
+    // Reset input to default if it was empty
+    if (!searchQuery.trim()) {
+      setSearchQuery(DEFAULT_SEARCH_QUERY)
+    }
+
+    // Build filters with the search query
     const searchFilters = {
       ...filters,
-      query: searchQuery.trim(),
+      query: queryToSearch,
     }
 
     // Create URL params with query and existing filters
@@ -160,38 +174,6 @@ export default function JobLayout(): ReactElement {
     [openDropdown]
   )
 
-  // Track previous filters to detect changes
-  const prevFiltersJsonRef = useRef<string>('')
-
-  // Re-search when filters change (after initial search has been performed)
-  // appliedSearchQuery comes from URL, so this watches URL-based state
-  useEffect(() => {
-    // Skip if no search has been performed yet (no query in URL)
-    if (!appliedSearchQuery) {
-      return
-    }
-
-    // Compare filters by JSON to detect actual changes
-    const currentFiltersJson = JSON.stringify(filters)
-    if (prevFiltersJsonRef.current === currentFiltersJson) {
-      return
-    }
-
-    // Update ref and trigger search
-    prevFiltersJsonRef.current = currentFiltersJson
-
-    const searchFilters = {
-      ...filters,
-      query: appliedSearchQuery,
-    }
-
-    search(searchFilters, {
-      page: PAGINATION.DEFAULT_PAGE,
-      pageSize: PAGINATION.PAGE_SIZE,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, appliedSearchQuery]) // search is stable from useJobSearch
-
   // Sync search input with URL when navigating (e.g., back/forward buttons)
   useEffect(() => {
     if (appliedSearchQuery && appliedSearchQuery !== searchQuery) {
@@ -200,6 +182,27 @@ export default function JobLayout(): ReactElement {
     // Only run when appliedSearchQuery changes (from URL navigation)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedSearchQuery])
+
+  // Perform initial search on mount with default query and filters
+  useEffect(() => {
+    const initialFilters = {
+      ...filters,
+      query: appliedSearchQuery,
+    }
+
+    // Update URL to reflect the initial search state (for shareability/bookmarking)
+    const params = filtersToURLParams(initialFilters)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+
+    search(initialFilters, {
+      page: PAGINATION.DEFAULT_PAGE,
+      pageSize: PAGINATION.PAGE_SIZE,
+    })
+
+    refreshForSearch(initialFilters)
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ==========================================================================
   // Render
