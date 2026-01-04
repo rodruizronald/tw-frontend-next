@@ -22,18 +22,6 @@ CREATE TYPE job_function_enum AS ENUM (
     'other'
 );
 
--- Province enumeration for Costa Rican locations
--- Represents the provinces (administrative divisions) of Costa Rica
-CREATE TYPE province_enum AS ENUM (
-    'san-jose',
-    'alajuela',
-    'heredia',
-    'guanacaste',
-    'puntarenas',
-    'limon',
-    'cartago'
-);
-
 -- Experience level enumeration for job postings
 -- Represents the seniority level required for a position
 CREATE TYPE experience_level_enum AS ENUM (
@@ -64,10 +52,15 @@ CREATE TYPE work_mode_enum AS ENUM (
 );
 
 -- Location enumeration for job postings
--- Represents the geographic region where the job is available
+-- Represents the provinces (administrative divisions) of Costa Rica
 CREATE TYPE location_enum AS ENUM (
-    'costa-rica',
-    'latam'
+    'san-jose',
+    'alajuela',
+    'heredia',
+    'guanacaste',
+    'puntarenas',
+    'limon',
+    'cartago'
 );
 
 -- Language enumeration for job postings

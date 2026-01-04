@@ -15,8 +15,6 @@ CREATE TABLE jobs (
     experience_level experience_level_enum NOT NULL,
     employment_type employment_type_enum NOT NULL,
     location location_enum NOT NULL,
-    city VARCHAR(50) NOT NULL,
-    province province_enum NOT NULL,
     work_mode work_mode_enum NOT NULL,
     job_function job_function_enum NOT NULL,
     language language_enum NOT NULL DEFAULT 'english',
