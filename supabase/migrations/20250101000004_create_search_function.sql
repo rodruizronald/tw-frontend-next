@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION search_jobs(
   p_experience_level experience_level_enum[] DEFAULT NULL,  -- Array for multi-select
   p_employment_type employment_type_enum[] DEFAULT NULL,    -- Array for multi-select
   p_work_mode work_mode_enum[] DEFAULT NULL,                -- Array for multi-select
-  p_province province_enum[] DEFAULT NULL,                  -- Array for multi-select
+  p_location location_enum[] DEFAULT NULL,                  -- Array for multi-select
   p_job_function job_function_enum[] DEFAULT NULL,          -- Array for multi-select
   p_company TEXT[] DEFAULT NULL,                            -- Array for multi-select
   p_date_from TIMESTAMP DEFAULT NULL,
@@ -32,8 +32,6 @@ RETURNS TABLE (
   experience_level experience_level_enum,
   employment_type employment_type_enum,
   location location_enum,
-  city VARCHAR,
-  province province_enum,
   work_mode work_mode_enum,
   job_function job_function_enum,
   language language_enum,
@@ -65,8 +63,6 @@ BEGIN
     j.experience_level,
     j.employment_type,
     j.location,
-    j.city,
-    j.province,
     j.work_mode,
     j.job_function,
     j.language,
@@ -87,7 +83,7 @@ BEGIN
     AND (p_experience_level IS NULL OR array_length(p_experience_level, 1) IS NULL OR j.experience_level = ANY(p_experience_level))
     AND (p_employment_type IS NULL OR array_length(p_employment_type, 1) IS NULL OR j.employment_type = ANY(p_employment_type))
     AND (p_work_mode IS NULL OR array_length(p_work_mode, 1) IS NULL OR j.work_mode = ANY(p_work_mode))
-    AND (p_province IS NULL OR array_length(p_province, 1) IS NULL OR j.province = ANY(p_province))
+    AND (p_location IS NULL OR array_length(p_location, 1) IS NULL OR j.location = ANY(p_location))
     AND (p_job_function IS NULL OR array_length(p_job_function, 1) IS NULL OR j.job_function = ANY(p_job_function))
     AND (p_company IS NULL OR array_length(p_company, 1) IS NULL OR c.name = ANY(p_company))
     -- Date filters
@@ -117,7 +113,7 @@ CREATE OR REPLACE FUNCTION get_companies_for_search(
   p_experience_level experience_level_enum[] DEFAULT NULL,  -- Same filters as search_jobs
   p_employment_type employment_type_enum[] DEFAULT NULL,
   p_work_mode work_mode_enum[] DEFAULT NULL,
-  p_province province_enum[] DEFAULT NULL,
+  p_location location_enum[] DEFAULT NULL,
   p_job_function job_function_enum[] DEFAULT NULL,
   p_date_from TIMESTAMP DEFAULT NULL,
   p_date_to TIMESTAMP DEFAULT NULL,
@@ -150,7 +146,7 @@ BEGIN
     AND (p_experience_level IS NULL OR array_length(p_experience_level, 1) IS NULL OR j.experience_level = ANY(p_experience_level))
     AND (p_employment_type IS NULL OR array_length(p_employment_type, 1) IS NULL OR j.employment_type = ANY(p_employment_type))
     AND (p_work_mode IS NULL OR array_length(p_work_mode, 1) IS NULL OR j.work_mode = ANY(p_work_mode))
-    AND (p_province IS NULL OR array_length(p_province, 1) IS NULL OR j.province = ANY(p_province))
+    AND (p_location IS NULL OR array_length(p_location, 1) IS NULL OR j.location = ANY(p_location))
     AND (p_job_function IS NULL OR array_length(p_job_function, 1) IS NULL OR j.job_function = ANY(p_job_function))
     AND (p_date_from IS NULL OR j.created_at >= p_date_from)
     AND (p_date_to IS NULL OR j.created_at <= p_date_to)

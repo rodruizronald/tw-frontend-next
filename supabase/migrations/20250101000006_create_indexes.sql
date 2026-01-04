@@ -17,9 +17,7 @@ CREATE INDEX idx_companies_active ON companies(id) WHERE is_active = TRUE;
 CREATE INDEX idx_jobs_search_vector ON jobs USING GIN (search_vector);
 
 -- Partial indexes for active jobs filtering
-CREATE INDEX idx_jobs_city ON jobs(city) WHERE is_active = TRUE;
 CREATE INDEX idx_jobs_location ON jobs(location) WHERE is_active = TRUE;
-CREATE INDEX idx_jobs_province ON jobs(province) WHERE is_active = TRUE;
 CREATE INDEX idx_jobs_active ON jobs(id) WHERE is_active = TRUE;
 CREATE INDEX idx_jobs_language ON jobs(language) WHERE is_active = TRUE;
 CREATE INDEX idx_jobs_work_mode ON jobs(work_mode) WHERE is_active = TRUE;
