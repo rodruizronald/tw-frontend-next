@@ -2,8 +2,8 @@ name: Code Quality Check
 
 on:
   pull_request:
-    branches: [main, master]
-    paths:
+    branches: main
+    paths: &code-quality-paths
       - 'src/**'
       - 'package.json'
       - 'package-lock.json'
@@ -13,16 +13,8 @@ on:
       - '.prettierignore'
       - 'next.config.ts'
   push:
-    branches: [main, master]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'tsconfig.json'
-      - 'eslint.config.mjs'
-      - '.prettierrc'
-      - '.prettierignore'
-      - 'next.config.ts'
+    branches: main
+    paths: *code-quality-paths
 
 jobs:
   lint-and-format:

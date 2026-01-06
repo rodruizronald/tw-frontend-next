@@ -24,7 +24,7 @@ jobs:
   # VALIDATE: Test migrations locally before deploying
   # ─────────────────────────────────────────────────────────
   validate:
-    name: Validate Migrations
+    name: validate-migrations
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -50,7 +50,7 @@ jobs:
   # DEPLOY: Push migrations to remote (only after validation)
   # ─────────────────────────────────────────────────────────
   deploy:
-    name: Deploy Migrations
+    name: deploy-migrations
     needs: validate
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
