@@ -1,6 +1,6 @@
-# Ticos in Tech - Costa Rica Tech Jobs
+# Job Board
 
-A modern job board for tech professionals in Costa Rica. Built with Next.js 16, React 19, and Material UI.
+A modern job board for tech professionals. Built with Next.js 16, React 19, and Material UI.
 
 ## 🚀 Tech Stack
 
