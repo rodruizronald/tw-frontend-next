@@ -3,7 +3,9 @@ name: Code Quality Check
 on:
   pull_request:
     branches: main
-    paths: &code-quality-paths
+  push:
+    branches: main
+    paths:
       - 'src/**'
       - 'package.json'
       - 'package-lock.json'
@@ -12,12 +14,40 @@ on:
       - '.prettierrc'
       - '.prettierignore'
       - 'next.config.ts'
-  push:
-    branches: main
-    paths: *code-quality-paths
 
 jobs:
+  # ─────────────────────────────────────────────────────────
+  # CHANGES: Detect if code-relevant files were modified
+  # ─────────────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for code changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'eslint.config.mjs'
+              - '.prettierrc'
+              - '.prettierignore'
+              - 'next.config.ts'
+
+  # ─────────────────────────────────────────────────────────
+  # LINT & FORMAT: Run code quality checks (skipped for docs-only changes)
+  # ─────────────────────────────────────────────────────────
   lint-and-format:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -42,9 +72,13 @@ jobs:
       - name: Check Prettier formatting
         run: npm run format:check
 
+  # ─────────────────────────────────────────────────────────
+  # BUILD: Build the application (skipped for docs-only changes)
+  # ─────────────────────────────────────────────────────────
   build:
+    needs: [changes, lint-and-format]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    needs: lint-and-format
 
     steps:
       - name: Checkout code
