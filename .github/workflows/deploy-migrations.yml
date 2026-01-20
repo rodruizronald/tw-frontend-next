@@ -10,9 +10,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'supabase/migrations/**'
-      - 'supabase/config.toml'
   workflow_dispatch:
 
 concurrency:
@@ -21,10 +18,32 @@ concurrency:
 
 jobs:
   # ─────────────────────────────────────────────────────────
+  # CHANGES: Detect if migration-relevant files were modified
+  # ─────────────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for migration changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'supabase/migrations/**'
+              - 'supabase/config.toml'
+
+  # ─────────────────────────────────────────────────────────
   # VALIDATE: Test migrations locally before deploying
   # ─────────────────────────────────────────────────────────
   validate:
-    name: Validate Migrations
+    name: validate-migrations
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -50,9 +69,11 @@ jobs:
   # DEPLOY: Push migrations to remote (only after validation)
   # ─────────────────────────────────────────────────────────
   deploy:
-    name: Deploy Migrations
-    needs: validate
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: deploy-migrations
+    needs: [changes, validate]
+    if: |
+      needs.changes.outputs.migrations == 'true' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
